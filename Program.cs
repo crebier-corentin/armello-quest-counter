@@ -66,6 +66,9 @@ namespace ArmelloLogTools
             {
                 events = FindLastGame(events).ToList();
             }
+            
+            //No events, no need to update the UI
+            if(events.Count == 0) return;
 
             _interpreter.ProcessEvents(events);
             _ui.Update(_interpreter.Players.Select(pair => pair.Value));
