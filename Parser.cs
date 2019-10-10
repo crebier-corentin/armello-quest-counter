@@ -37,6 +37,13 @@ namespace ArmelloLogTools
                     RegexOptions.Compiled | RegexOptions.IgnoreCase),
                 groups => new StartTurnEvent(int.Parse(groups[1].Value))),
 
+            //On Spawn Quest Complete
+            new ParserTest(
+                new Regex(
+                    @"Quest: OnSpawnQuestComplete - player: Player(\d), quest: \w+, questTilePos: \(-?\d+,-?\d+\), success: True",
+                    RegexOptions.Compiled | RegexOptions.IgnoreCase),
+                groups => new OnQuestSpawnComplete(int.Parse(groups[1].Value))),
+            
             //Complete Quest
             new ParserTest(
                 new Regex(

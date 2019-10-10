@@ -34,6 +34,18 @@
         }
     }
 
+    public class OnQuestSpawnComplete : Event
+    {
+        public override EventType Type => EventType.OnQuestSpawnComplete;
+        
+        public int PlayerId;
+
+        public OnQuestSpawnComplete(int playerId)
+        {
+            PlayerId = playerId;
+        }
+        
+    } 
     public class CompleteQuestEvent : Event
     {
         public override EventType Type => EventType.CompleteQuest;

@@ -41,18 +41,17 @@ namespace ArmelloLogTools
                     _players[playerEvent.Player.Id] = playerEvent.Player;
                     break;
 
-                //New turn, update currentPlayerId
-                case EventType.StartTurn:
-                    var turnEvent = (StartTurnEvent) @event;
-                    _currentPlayerId = turnEvent.PlayerId;
-                    break;
+                //Quest spawned, increment player's quest count
+                case EventType.OnQuestSpawnComplete:
+                {
+                    var questSpawnEvent = (OnQuestSpawnComplete) @event;
 
-                //Quest complete, increment player's quest counter
-                case EventType.CompleteQuest:
-                    var player = CurrentPlayer;
+                    var player = _players[questSpawnEvent.PlayerId];
                     player.QuestCount++;
-                    CurrentPlayer = player;
+                    _players[questSpawnEvent.PlayerId] = player;
                     break;
+                }
+                
             }
         }
     }

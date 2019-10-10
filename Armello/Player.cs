@@ -12,7 +12,7 @@
             Id = id;
             Name = name;
             Hero = hero;
-            QuestCount = 1;
+            QuestCount = 0;
         }
 
         public Player(int id, string name, string heroHexId)
@@ -20,7 +20,7 @@
             Id = id;
             Name = name;
             Hero = HeroHelpers.HeroFromHexId(heroHexId);
-            QuestCount = 1;
+            QuestCount = 0;
         }
 
         public static Player Empty = new Player(-1, "", Hero.Unknown);

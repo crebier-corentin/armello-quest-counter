@@ -7,6 +7,7 @@
 
         StartTurn,
 
-        CompleteQuest
+        OnQuestSpawnComplete,
+        CompleteQuest,
     }
 }
