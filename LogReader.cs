@@ -8,7 +8,7 @@ using MoreLinq.Extensions;
 
 namespace ArmelloLogTools
 {
-    public class LogReader
+    public class LogReader : IDisposable
     {
         private readonly StreamReader _reader;
 
@@ -24,6 +24,11 @@ namespace ArmelloLogTools
             {
                 yield return line;
             }
+        }
+
+        public void Dispose()
+        {
+            _reader.Dispose();
         }
     }
 

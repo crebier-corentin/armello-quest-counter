@@ -11,7 +11,7 @@ using Timer = System.Timers.Timer;
 
 namespace ArmelloLogTools
 {
-    class Program
+    internal static class Program
     {
         private static LogReader _reader;
         private static Ui _ui;
@@ -43,16 +43,15 @@ namespace ArmelloLogTools
             
             UpdateEventsAndUi(true);
 
-            using (var timer = new Timer(5000))
-            {
-                timer.AutoReset = true;
+            using var timer = new Timer(5000) {AutoReset = true};
 
-                timer.Elapsed += (sender, eventArgs) => { UpdateEventsAndUi(); };
+            timer.Elapsed += (sender, eventArgs) => { UpdateEventsAndUi(); };
 
-                timer.Start();
+            timer.Start();
 
-                ExitLoop();
-            }
+            ExitLoop();
+            
+            _reader.Dispose();
         }
 
         private static void UpdateEventsAndUi(bool lastGame = false)
