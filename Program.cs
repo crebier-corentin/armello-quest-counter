@@ -13,9 +13,6 @@ namespace ArmelloLogTools
 {
     class Program
     {
-
-
-
         private static LogReader _reader;
         private static Ui _ui;
         private static Interpreter _interpreter;
@@ -60,7 +57,7 @@ namespace ArmelloLogTools
 
         private static void UpdateEventsAndUi(bool lastGame = false)
         {
-            var events = Parser.ParseLines(_reader.ReadLines());
+            var events = Parser.ParseLines(_reader.ReadLines(), ParserTest.QuestCounterTests);
 
             if (lastGame)
             {

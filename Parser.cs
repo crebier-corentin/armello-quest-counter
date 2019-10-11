@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Threading;
 using ArmelloLogTools.Armello;
 
 namespace ArmelloLogTools
@@ -16,60 +17,62 @@ namespace ArmelloLogTools
             Evaluator = evaluator;
         }
 
-        public static readonly ParserTest[] DefaultTests = new ParserTest[]
+        public ParserTest(string regex, Func<GroupCollection, Event> evaluator)
         {
-            //Load Game
-            new ParserTest(
-                new Regex(@"---\s+Load\s+Game", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-                collection => new LoadGameEvent()),
+            Regex = new Regex(regex, RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            Evaluator = evaluator;
+        }
 
-            //Load Player
-            new ParserTest(
-                new Regex(
-                    @"Gameplay:\s+\[\s+\D+\]\s+Id:\s+Player(\d),\s+Name:\s+(.+),\s+Network\s+Id:\s+.+,\s+Hero:\s+(0x\w+)",
-                    RegexOptions.Compiled | RegexOptions.IgnoreCase),
-                groups => new LoadPlayerEvent(int.Parse(groups[1].Value), groups[2].Value, groups[3].Value)),
-
-            //Start Turn
-            new ParserTest(
-                new Regex(
-                    @"Player: Player\+Message\+StartTurn: Dispatch\(\[Player .+ \(Player(\d)\)",
-                    RegexOptions.Compiled | RegexOptions.IgnoreCase),
-                groups => new StartTurnEvent(int.Parse(groups[1].Value))),
-
-            //On Spawn Quest Complete
-            new ParserTest(
-                new Regex(
-                    @"Quest: OnSpawnQuestComplete - player: Player(\d), quest: \w+, questTilePos: \(-?\d+,-?\d+\), success: True",
-                    RegexOptions.Compiled | RegexOptions.IgnoreCase),
-                groups => new OnQuestSpawnComplete(int.Parse(groups[1].Value))),
-            
-            //Complete Quest
-            new ParserTest(
-                new Regex(
-                    @"Gameplay: QuestManager\+Message\+CompleteQuest",
-                    RegexOptions.Compiled | RegexOptions.IgnoreCase),
-                groups => new CompleteQuestEvent()),
+        public static readonly ParserTest[] QuestCounterTests = new ParserTest[]
+        {
+            Tests.LoadGame,
+            Tests.LoadPlayer,
+            Tests.OnSpawnQuestComplete
         };
+
+        public static class Tests
+        {
+            public static ParserTest LoadGame = new ParserTest(@"---\s+Load\s+Game", groups => new LoadGameEvent());
+
+            public static ParserTest LoadPlayer =
+                new ParserTest(
+                    @"Gameplay:\s+\[\s+\D+\]\s+Id:\s+Player(\d),\s+Name:\s+(.+),\s+Network\s+Id:\s+.+,\s+Hero:\s+(0x\w+)",
+                    groups => new LoadPlayerEvent(int.Parse(groups[1].Value), groups[2].Value, groups[3].Value));
+
+            public static ParserTest StartTurn =
+                new ParserTest(
+                    @"Player: Player\+Message\+StartTurn: Dispatch\(\[Player .+ \(Player(\d)\)",
+                    groups => new StartTurnEvent(int.Parse(groups[1].Value)));
+
+            public static ParserTest OnSpawnQuestComplete =
+                new ParserTest(
+                    @"Quest: OnSpawnQuestComplete - player: Player(\d), quest: \w+, questTilePos: \(-?\d+,-?\d+\), success: True",
+                    groups => new OnQuestSpawnComplete(int.Parse(groups[1].Value)));
+
+            public static ParserTest CompleteQuest =
+                new ParserTest(
+                    @"Gameplay: QuestManager\+Message\+CompleteQuest",
+                    groups => new CompleteQuestEvent());
+        }
     }
 
     public static class Parser
     {
-        public static List<Event> ParseLines(IEnumerable<string> lines)
+        public static List<Event> ParseLines(IEnumerable<string> lines, IEnumerable<ParserTest> tests)
         {
             var events = new List<Event>();
 
             foreach (var line in lines)
             {
-                TestLine(events, line);
+                TestLine(events, line, tests);
             }
 
             return events;
         }
 
-        private static void TestLine(ICollection<Event> events, string line)
+        private static void TestLine(ICollection<Event> events, string line, IEnumerable<ParserTest> tests)
         {
-            foreach (var test in ParserTest.DefaultTests)
+            foreach (var test in tests)
             {
                 var match = test.Regex.Match(line);
 
