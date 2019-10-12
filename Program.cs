@@ -35,11 +35,9 @@ namespace ArmelloLogTools
         {
             var logFile = args.Length > 0 ? args[0] : LogFile.LatestLogFile();
 
-            Console.WriteLine($"Using log file : {logFile}");
-
             _reader = new LogReader(logFile);
             _interpreter = new Interpreter();
-            _ui = new Ui();
+            _ui = new Ui {LogFilename = logFile};
             
             UpdateEventsAndUi(true);
 
@@ -50,7 +48,7 @@ namespace ArmelloLogTools
             timer.Start();
 
             ExitLoop();
-            
+
             _reader.Dispose();
         }
 
@@ -62,17 +60,17 @@ namespace ArmelloLogTools
             {
                 events = FindLastGame(events).ToList();
             }
-            
+
             //No events, no need to update the UI
-            if(events.Count == 0) return;
+            if (events.Count == 0) return;
 
             _interpreter.ProcessEvents(events);
-            _ui.Update(_interpreter.Players.Select(pair => pair.Value));
+            _ui.Players = _interpreter.Players.Select(pair => pair.Value);
+            _ui.Draw();
         }
 
         private static void ExitLoop()
         {
-            Console.WriteLine("Press escape to quit");
             while (true)
             {
                 Thread.Sleep(1);

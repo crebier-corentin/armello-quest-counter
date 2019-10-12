@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ArmelloLogTools.Armello;
@@ -11,12 +12,15 @@ namespace ArmelloLogTools
         private int _cursorLeftPosition = -1;
         private int _cursorTopPosition = -1;
 
-        public void Update(IEnumerable<Player> players)
+        public string LogFilename;
+        public IEnumerable<Player> Players;
+
+        public void Draw()
         {
             var heroesName = new List<string>();
             var quests = new List<string>();
 
-            foreach (var player in players)
+            foreach (var player in Players)
             {
                 heroesName.Add(player.Hero.ToString());
 
@@ -35,7 +39,15 @@ namespace ArmelloLogTools
                 }
             }
 
+            Console.Clear();
+            DrawLogFilename();
             DrawTable(heroesName, quests);
+            DrawInstructions();
+        }
+
+        private void DrawLogFilename()
+        {
+            Console.WriteLine($"Using log file : {LogFilename}");
         }
 
         private void DrawTable(IEnumerable<string> columns, IEnumerable<string> line1)
@@ -61,6 +73,11 @@ namespace ArmelloLogTools
             {
                 Console.SetCursorPosition(left, top);
             }
+        }
+
+        private static void DrawInstructions()
+        {
+            Console.WriteLine("Press escape to quit");
         }
     }
 }
