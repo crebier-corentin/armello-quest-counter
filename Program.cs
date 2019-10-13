@@ -17,55 +17,67 @@ namespace ArmelloLogTools
         private static Ui _ui;
         private static Interpreter _interpreter;
 
-
-        private static IEnumerable<Event> FindLastGame(IList<Event> events)
-        {
-            for (var i = events.Count - 1; i >= 0; i--)
-            {
-                if (events[i].Type == EventType.LoadGame)
-                {
-                    return events.Skip(i);
-                }
-            }
-
-            throw new Exception("Cannot find a game");
-        }
-
         private static void Main(string[] args)
         {
-            var logFile = args.Length > 0 ? args[0] : LogFile.LatestLogFile();
+            var manualLogFile = args.Length > 0;
+            var logFile = manualLogFile ? args[0] : LogFile.LatestLogFile();
 
-            _reader = new LogReader(logFile);
-            _interpreter = new Interpreter();
-            _ui = new Ui {LogFilename = logFile};
-            
-            UpdateEventsAndUi(true);
+            using (_reader = new LogReader(logFile))
+            {
+                _interpreter = new Interpreter();
+                _ui = new Ui {LogFilename = logFile};
 
-            using var timer = new Timer(5000) {AutoReset = true};
+                UpdateEventsAndUi();
 
-            timer.Elapsed += (sender, eventArgs) => { UpdateEventsAndUi(); };
+                //Timer
+                using var timer = new Timer(5000) {AutoReset = true};
+                timer.Elapsed += (sender, eventArgs) => { UpdateEventsAndUi(); };
+                timer.Start();
 
-            timer.Start();
+                //Watch for new log files
+                using var watcher = new FileSystemWatcher
+                {
+                    Path = LogFile.LogDirectoryPath,
+                    Filter = "*.txt",
+                    NotifyFilter = NotifyFilters.LastAccess |
+                                   NotifyFilters.LastWrite |
+                                   NotifyFilters.FileName |
+                                   NotifyFilters.DirectoryName
+                };
+                if (!manualLogFile)
+                {
+                    watcher.Created += (sender, eventArgs) =>
+                    {
+                        //Wait for file to be named
+                        Thread.Sleep(1000);
 
-            ExitLoop();
+                        var newFilename = LogFile.LatestLogFile();
+                        //Ignore if LatestLogFile has not changed
+                        if (newFilename == _reader.Filename) return;
 
-            _reader.Dispose();
+                        //Change log file
+                        _ui.LogFilename = newFilename;
+                        _reader.ChangeFile(newFilename);
+                        UpdateEventsAndUi();
+                    };
+
+                    watcher.EnableRaisingEvents = true;
+                }
+
+                ExitLoop();
+            }
         }
 
-        private static void UpdateEventsAndUi(bool lastGame = false)
+        private static void UpdateEventsAndUi()
         {
             var events = Parser.ParseLines(_reader.ReadLines(), ParserTest.QuestCounterTests);
-
-            if (lastGame)
+            
+            if (events.Count > 0)
             {
-                events = FindLastGame(events).ToList();
+                _interpreter.ProcessEvents(events);
+                _ui.Players = _interpreter.Players.Select(pair => pair.Value);
             }
 
-            //No events, no need to update the UI
-            if (events.Count == 0) return;
-
-            _interpreter.ProcessEvents(events);
-            _ui.Players = _interpreter.Players.Select(pair => pair.Value);
             _ui.Draw();
         }
 

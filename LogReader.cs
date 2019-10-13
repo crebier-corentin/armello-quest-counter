@@ -10,10 +10,21 @@ namespace ArmelloLogTools
 {
     public class LogReader : IDisposable
     {
-        private readonly StreamReader _reader;
+        private StreamReader _reader;
+        public string Filename { get; private set; }
 
         public LogReader(string filename)
         {
+            Filename = filename;
+            _reader = new StreamReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
+        }
+
+        public void ChangeFile(string filename)
+        {
+            Filename = filename;
+            //Close previous
+            _reader.Dispose();
+            //Open new file
             _reader = new StreamReader(File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.ReadWrite));
         }
 
@@ -35,17 +46,20 @@ namespace ArmelloLogTools
     public static class LogFile
     {
         private static Regex _armelloLogFilenameDatetimeRegex =
-            new Regex(@"^.+_log_(.+)\.txt$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            new Regex(@"^.+_log_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}-(?:A|P)M)\.txt$",
+                RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        public static readonly string LogDirectoryPath = GetLogDirectoryPath();
 
         public static string LatestLogFile(string dirPath)
         {
             var dir = new DirectoryInfo(dirPath);
             var files = dir.GetFiles("*.txt");
 
-            return files.Select(info => (info: info, match: _armelloLogFilenameDatetimeRegex.Match(info.Name)))
+            return files.Select(info => (info, match: _armelloLogFilenameDatetimeRegex.Match(info.Name)))
                 .Where(t => t.match.Success)
                 .Select(t =>
-                    (info: t.info,
+                    (t.info,
                         datetime: DateTime.ParseExact(t.match.Groups[1].Value, "yyyy-MM-dd_hh-mm-ss-tt",
                             CultureInfo.InvariantCulture)))
                 .MaxBy(t => t.datetime).First().info.FullName;
@@ -53,9 +67,17 @@ namespace ArmelloLogTools
 
         public static string LatestLogFile()
         {
-            var armelloLogPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            return LatestLogFile(LogDirectoryPath);
+        }
+
+        private static string GetLogDirectoryPath()
+        {
+            var relativePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                 "../LocalLow/League of Geeks/Armello/logs");
-            return LatestLogFile(armelloLogPath);
+
+            var dir = new DirectoryInfo(relativePath);
+
+            return dir.FullName;
         }
     }
 }

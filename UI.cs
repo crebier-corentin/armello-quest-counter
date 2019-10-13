@@ -9,14 +9,27 @@ namespace ArmelloLogTools
 {
     public class Ui
     {
-        private int _cursorLeftPosition = -1;
-        private int _cursorTopPosition = -1;
-
         public string LogFilename;
         public IEnumerable<Player> Players;
 
         public void Draw()
         {
+            Console.Clear();
+            DrawLogFilename();
+            DrawQuestTable();
+            DrawInstructions();
+        }
+
+        private void DrawLogFilename()
+        {
+            Console.WriteLine($"Using log file : {LogFilename}");
+        }
+
+        private void DrawQuestTable()
+        {
+            //Do nothing if there is no players
+            if (Players == null) return;
+
             var heroesName = new List<string>();
             var quests = new List<string>();
 
@@ -39,40 +52,11 @@ namespace ArmelloLogTools
                 }
             }
 
-            Console.Clear();
-            DrawLogFilename();
-            DrawTable(heroesName, quests);
-            DrawInstructions();
-        }
-
-        private void DrawLogFilename()
-        {
-            Console.WriteLine($"Using log file : {LogFilename}");
-        }
-
-        private void DrawTable(IEnumerable<string> columns, IEnumerable<string> line1)
-        {
-            if (_cursorLeftPosition == -1 || _cursorTopPosition == -1)
-            {
-                _cursorLeftPosition = Console.CursorLeft;
-                _cursorTopPosition = Console.CursorTop;
-            }
-
-            var left = Console.CursorLeft;
-            var top = Console.CursorTop;
-
-            Console.SetCursorPosition(_cursorLeftPosition, _cursorTopPosition);
-
-            var table = new ConsoleTable(columns.ToArray());
-            table.AddRow(line1.ToArray());
+            var table = new ConsoleTable(heroesName.ToArray());
+            table.AddRow(quests.ToArray());
             var output = table.ToStringAlternative();
 
             Console.Write(output);
-
-            if (top > _cursorTopPosition)
-            {
-                Console.SetCursorPosition(left, top);
-            }
         }
 
         private static void DrawInstructions()
